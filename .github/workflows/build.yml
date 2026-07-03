@@ -1,24 +1,20 @@
 name: Build TWRP
-
 on:
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Free disk space
       run: |
         sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache
         sudo docker image prune -af
         df -h
-
     - name: Ensure python points somewhere sane
       run: |
         sudo apt-get install -y python-is-python3 || true
         python --version
-
     - name: Install dependencies
       run: |
         sudo apt-get install -y bc bison build-essential ccache curl flex \
@@ -26,39 +22,70 @@ jobs:
           liblz4-tool libssl-dev libxml2-utils lzop pngcrush rsync \
           schedtool squashfs-tools xsltproc zip zlib1g-dev libelf-dev \
           libstdc++-12-dev || true
-
     - name: Symlink 32-bit ncurses/readline libs (legacy AOSP host tools)
       run: |
         sudo apt-get install -y libtinfo5 libncurses5 2>/dev/null || \
         (curl -sSL http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb -o /tmp/libtinfo5.deb && \
          curl -sSL http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.3-2ubuntu0.1_amd64.deb -o /tmp/libncurses5.deb && \
          sudo dpkg -i /tmp/libtinfo5.deb /tmp/libncurses5.deb || true)
-
     - name: Install repo
       run: |
         mkdir ~/bin
         curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
         chmod a+x ~/bin/repo
         echo "$HOME/bin" >> $GITHUB_PATH
-
     - name: Configure git
       run: |
         git config --global user.email "build@github.com"
         git config --global user.name "GitHub Actions"
 
-    - name: Init repo and sync
+    - name: Init repo
       run: |
         mkdir twrp && cd twrp
         repo init -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_omni.git \
           -b twrp-10.0-deprecated --depth=1
-        repo sync -j4 --force-sync --no-clone-bundle --no-tags
+
+    - name: Exclude unused/rate-limited projects
+      run: |
+        cd twrp
+        mkdir -p .repo/local_manifests
+        cat > .repo/local_manifests/remove-unused.xml << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <manifest>
+          <remove-project name="platform/external/python/cpython2" />
+          <remove-project name="platform/external/python/cryptography" />
+          <remove-project name="platform/external/python/asn1crypto" />
+          <remove-project name="platform/external/python/futures" />
+          <remove-project name="platform/external/python/google-api-python-client" />
+          <remove-project name="platform/external/python/dill" />
+          <remove-project name="platform/external/python/google-auth" />
+          <remove-project name="platform/external/python/google-cloud-core" />
+        </manifest>
+        EOF
+
+    - name: Sync (with retry on 429/network failures)
+      run: |
+        cd twrp
+        n=0
+        max=5
+        until [ $n -ge $max ]
+        do
+          repo sync -c -j4 --no-tags --no-clone-bundle --retry-fetches=3 --force-sync && break
+          n=$((n+1))
+          echo "::warning::repo sync attempt $n/$max failed, retrying in 30s..."
+          sleep 30
+        done
+        if [ $n -ge $max ]; then
+          echo "::error::repo sync failed after $max attempts"
+          exit 1
+        fi
 
     - name: Clone device tree
       run: |
         cd twrp
         git clone https://github.com/P-3-4/recovery_device_infinix_X683 \
           -b android-10.0 \
-          device/infinix/X683
+          device/infinix/Infinix-X683B
 
     - name: Build
       run: |
@@ -66,7 +93,7 @@ jobs:
         export ALLOW_MISSING_DEPENDENCIES=true
         export LC_ALL=C
         source build/envsetup.sh
-        lunch omni_X683-eng
+        lunch omni_Infinix-X683B-eng
         mka recoveryimage -j4 2>&1 | tee ../build.log
 
     - name: Upload recovery image
