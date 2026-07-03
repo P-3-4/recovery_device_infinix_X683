@@ -85,7 +85,7 @@ jobs:
         cd twrp
         git clone https://github.com/P-3-4/recovery_device_infinix_X683 \
           -b android-10.0 \
-          device/infinix/Infinix-X683B
+          device/infinix/X683B
 
     - name: Build
       run: |
@@ -93,7 +93,7 @@ jobs:
         export ALLOW_MISSING_DEPENDENCIES=true
         export LC_ALL=C
         source build/envsetup.sh
-        lunch omni_Infinix-X683B-eng
+        lunch omni_X683B-eng
         mka recoveryimage -j4 2>&1 | tee ../build.log
 
     - name: Upload recovery image
