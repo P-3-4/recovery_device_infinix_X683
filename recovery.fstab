@@ -1,8 +1,8 @@
-/system                   ext4     system                                                   flags=display=system;logical
-/vendor                   ext4     vendor                                                   flags=display=vendor;logical
-/product                  ext4     product                                                  flags=display=product;logical
-/metadata                 ext4     /dev/block/platform/bootdevice/by-name/md_udc            flags=display=metadata
-/data                     f2fs     /dev/block/platform/bootdevice/by-name/userdata          flags=display=data
+system /system         ext4     ro     wait,,avb=vbmeta_system,logical,first_stage_mount,avb_keys=/avb/q-gsi.avbpubkey:/avb/r-gsi.avbpubkey:/avb/s-gsi.avbpubkey
+vendor /vendor         ext4     ro     wait,,avb,logical,first_stage_mount
+product /product       ext4     ro     wait,,avb,logical,first_stage_mount
+/dev/block/platform/bootdevice/by-name/md_udc       /metadata      ext4 noatime,nosuid,nodev,discard wait,formattable,first_stage_mount
+/dev/block/platform/bootdevice/by-name/userdata     /data          f2fs noatime,nosuid,nodev,discard,noflush_merge,reserve_root=134217,resgid=1065,tran_gc wait,check,formattable,quota,resize,reservedsize=128m,checkpoint=fs,fileencryption=aes-256-xts
 /cache                    ext4     /dev/block/platform/bootdevice/by-name/cache             flags=display=cache
 /tranfs                   ext4     /dev/block/platform/bootdevice/by-name/tranfs            flags=display=tranfs
 /mnt/vendor/protect_f     ext4     /dev/block/platform/bootdevice/by-name/protect1          flags=display=protect_f
@@ -17,8 +17,8 @@ auto                      vfat     /devices/platform/mt_usb*                    
 /proinfo                  emmc     /dev/block/platform/bootdevice/by-name/proinfo           flags=display=proinfo
 /bootloader               emmc     /dev/block/platform/bootdevice/by-name/lk                flags=display=bootloader
 /bootloader2              emmc     /dev/block/platform/bootdevice/by-name/lk2               flags=display=bootloader2
-/misc                     emmc     /dev/block/platform/bootdevice/by-name/misc              flags=display=misc
-/para                     emmc     /dev/block/platform/bootdevice/by-name/para              flags=display=para
+/dev/block/platform/bootdevice/by-name/misc         /misc          emmc defaults defaults
+/dev/block/platform/bootdevice/by-name/para         /para          emmc defaults defaults
 /recovery                 emmc     /dev/block/platform/bootdevice/by-name/recovery          flags=display=recovery
 /boot                     emmc     /dev/block/platform/bootdevice/by-name/boot              flags=display=boot
 /vbmeta_vendor            emmc     /dev/block/platform/bootdevice/by-name/vbmeta_vendor     flags=display=vbmeta_vendor
