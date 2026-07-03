@@ -1,4 +1,4 @@
-# Android device tree for Infinix Infinix X683B (Infinix-X683B)
+# Android device tree for Infinix Infinix X683B (X683B)
 
 ```
 #
